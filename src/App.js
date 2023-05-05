@@ -1,10 +1,23 @@
 import './App.css';
-import Dies from './components/Dies';
-import {useState} from "react"
+import Dice from './components/Dice';
+import {useState, useEffect} from "react"
 import { nanoid } from 'nanoid'
+import Confetti from 'react-confetti';
+
 
 function App() {
-  const [dies, setDies] = useState(randomArrayGenerator())
+  const [dice, setDice] = useState(randomArrayGenerator())
+  const [isWinner, setIsWinner] = useState(false)
+
+  useEffect(() => {
+    const isAllHeld = dice.every(item => item.isHeld)
+    const allSameValue = dice.every(item => item.value === dice[0].value)
+    if(isAllHeld && allSameValue){
+      setIsWinner(true)
+    }else{
+      setIsWinner(false)
+    }
+  }, [dice])
 
   function randomArrayGenerator(){
     const randomArray = [];
@@ -15,34 +28,44 @@ function App() {
     return randomArray;
   }
   
+  function generateSingleDie(){
+    const randomValue = Math.floor(Math.random()*6 +1)
+    return {id:nanoid() ,value:randomValue, isHeld:false}
+  }
+  
   function rollDice(){
-    setDies(randomArrayGenerator())
+    if(!isWinner){
+      setDice(prevValues => prevValues.map(item => {
+        return item.isHeld ? item : generateSingleDie()
+      }))
+    }else{
+      setDice(randomArrayGenerator())
+    }
   }
 
   function setIsHeld(id){
-    // const newDies = dies.map(item => {
-    //   if (item.id === id){
-    //     return {...item, isHeld:!item.isHeld}
-    //   }
-    //   return item
-    // })
-    // setDies(newDies)
-    setDies(prevDies => prevDies.map(item => {
+    setDice(prevDice => prevDice.map(item => {
       return item.id === id ? {...item, isHeld:!item.isHeld} : item
     }))
   }
 
-  const diesArray = dies.map(item => (
-    <Dies key={item.id} value={item.value} isHeld={item.isHeld} setIsHeld={()=> setIsHeld(item.id)}/>
+  const diceArray = dice.map(item => (
+    <Dice key={item.id} value={item.value} isHeld={item.isHeld} setIsHeld={()=> setIsHeld(item.id)}/>
   ))
   
   return (
     <div className="App">
+      {isWinner && <Confetti gravity={0.3}/>}
       <main className='main'>
-        <div className='dies-container'>
-          {diesArray}
+        <h1 className='title'>Tenzies</h1>
+        <p className='instructions'>Roll until all dice are the same.
+        Click each die to freeze it at its current value between rolls.</p>
+        <div className='dice-container'>
+          {diceArray}
         </div>
-        <button className='roll-button' onClick={rollDice}>Roll!</button>
+        <button className='roll-button' onClick={rollDice}>
+          {isWinner ? "Play again" : "Roll"}
+        </button>
       </main>
     </div>
   );
